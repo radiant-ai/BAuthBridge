@@ -1,0 +1,6 @@
+name: BAuthBridge
+version: '${project.version}'
+main: fun.milkyway.bauthbridge.paper.BAuthBridgePaper
+api-version: 1.18
+depend: [ BaronessAuth ]
+authors: [ Radiant_Shiny ]
