@@ -9,7 +9,7 @@ import org.bukkit.event.Listener;
 import ru.baronessdev.paid.auth.api.events.AuthPlayerLoginEvent;
 
 public class AuthorizationListener implements Listener {
-    private MessageManager messageManager;
+    private final MessageManager messageManager;
     public AuthorizationListener(MessageManager messageManager) {
         this.messageManager = messageManager;
     }

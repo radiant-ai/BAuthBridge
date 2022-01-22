@@ -15,8 +15,8 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 public class AuthorizationListener implements Listener {
-    private Plugin plugin;
-    private AuthorizedPlayerManager authorizedPlayerManager;
+    private final Plugin plugin;
+    private final AuthorizedPlayerManager authorizedPlayerManager;
     public AuthorizationListener(Plugin plugin, AuthorizedPlayerManager authorizedPlayerManager) {
         this.plugin = plugin;
         this.authorizedPlayerManager = authorizedPlayerManager;
@@ -25,7 +25,7 @@ public class AuthorizationListener implements Listener {
     public void onPluginMessage(PluginMessageEvent event) {
         if (event.getSender() instanceof Server) {
             String messageString = new String(event.getData(), StandardCharsets.UTF_8);
-            AuthorizationMessage message = null;
+            AuthorizationMessage message;
             try {
                 message = new AuthorizationMessage(messageString);
             }
@@ -36,9 +36,7 @@ public class AuthorizationListener implements Listener {
                 plugin.getLogger().warning(sw.toString());
                 return;
             }
-            if (message != null) {
-                authorizedPlayerManager.authorizePlayer(message.getPlayerUUID());
-            }
+            authorizedPlayerManager.authorizePlayer(message.getPlayerUUID());
         }
     }
     @EventHandler

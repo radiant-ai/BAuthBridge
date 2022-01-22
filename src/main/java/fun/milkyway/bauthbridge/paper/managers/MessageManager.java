@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 public class MessageManager {
     public static final String CHANNEL = "BAuthBridgeChannel";
-    private Plugin plugin;
+    private final Plugin plugin;
     public MessageManager(Plugin plugin) {
         this.plugin = plugin;
         plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, CHANNEL);

@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class AuthorizedPlayerManager {
-    private Map<UUID, AuthorizedPlayer> authorizedPlayers;
+    private final Map<UUID, AuthorizedPlayer> authorizedPlayers;
     public AuthorizedPlayerManager() {
         authorizedPlayers = new HashMap<>();
     }

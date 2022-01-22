@@ -13,11 +13,9 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-import java.util.Iterator;
-
 public class SecurityListener implements Listener {
-    private Plugin plugin;
-    private AuthorizedPlayerManager authorizedPlayerManager;
+    private final Plugin plugin;
+    private final AuthorizedPlayerManager authorizedPlayerManager;
     public SecurityListener(Plugin plugin, AuthorizedPlayerManager authorizedPlayerManager) {
         this.plugin = plugin;
         this.authorizedPlayerManager = authorizedPlayerManager;
@@ -26,8 +24,7 @@ public class SecurityListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onCommand(ChatEvent event) {
         Connection connection = event.getSender();
-        if (connection instanceof ProxiedPlayer) {
-            ProxiedPlayer proxiedPlayer = (ProxiedPlayer) connection;
+        if (connection instanceof ProxiedPlayer proxiedPlayer) {
             if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
                 if (!isAllowedString(event.getMessage())) {
                     event.setCancelled(true);
@@ -39,8 +36,7 @@ public class SecurityListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPermissionCheck(PermissionCheckEvent event) {
         CommandSender commandSender = event.getSender();
-        if (commandSender instanceof ProxiedPlayer) {
-            ProxiedPlayer proxiedPlayer = (ProxiedPlayer) commandSender;
+        if (commandSender instanceof ProxiedPlayer proxiedPlayer) {
             if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
                 event.setHasPermission(false);
             }
@@ -49,8 +45,7 @@ public class SecurityListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onTabcompletePre(TabCompleteEvent event) {
-        if (event.getSender() instanceof ProxiedPlayer) {
-            ProxiedPlayer proxiedPlayer = (ProxiedPlayer) event.getSender();
+        if (event.getSender() instanceof ProxiedPlayer proxiedPlayer) {
             if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
                 event.getSuggestions().clear();
             }
@@ -60,16 +55,9 @@ public class SecurityListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onTabcompletePost(TabCompleteResponseEvent event) {
         Connection connection = event.getSender();
-        if (connection instanceof ProxiedPlayer) {
-            ProxiedPlayer proxiedPlayer = (ProxiedPlayer) connection;
+        if (connection instanceof ProxiedPlayer proxiedPlayer) {
             if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
-                Iterator<String> iterator = event.getSuggestions().iterator();
-                while (iterator.hasNext()) {
-                    String suggestion = iterator.next();
-                    if (!isAllowedCommand(suggestion)) {
-                        iterator.remove();
-                    }
-                }
+                event.getSuggestions().removeIf(suggestion -> !isAllowedCommand(suggestion));
             }
         }
     }
@@ -79,10 +67,7 @@ public class SecurityListener implements Listener {
     }
 
     private boolean isAllowedMessage(String message) {
-        if (message.matches("^-?\\d+$")) {
-            return true;
-        }
-        return false;
+        return message.matches("^-?\\d+$");
     }
 
     private boolean isAllowedCommand(String command) {
@@ -98,9 +83,6 @@ public class SecurityListener implements Listener {
         if (command.startsWith("/register ")) {
             return true;
         }
-        if (command.startsWith("/bauth-antibotclick-")) {
-            return true;
-        }
-        return false;
+        return command.startsWith("/bauth-antibotclick-");
     }
 }
