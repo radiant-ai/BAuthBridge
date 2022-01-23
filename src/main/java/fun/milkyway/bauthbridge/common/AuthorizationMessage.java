@@ -23,7 +23,7 @@ public class AuthorizationMessage implements Message {
     }
     @Override
     public String asString() {
-        return playerUUID.toString()+"|"+action.name();
+        return action.name()+"|"+playerUUID.toString();
     }
     public UUID getPlayerUUID() {
         return playerUUID;

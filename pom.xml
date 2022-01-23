@@ -77,8 +77,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>ru.baronessdev</groupId>
-            <artifactId>BaronessAuth</artifactId>
+            <groupId>ru.blackbaroness</groupId>
+            <artifactId>BaronessAuthAPI</artifactId>
             <version>230</version>
             <scope>provided</scope>
         </dependency>

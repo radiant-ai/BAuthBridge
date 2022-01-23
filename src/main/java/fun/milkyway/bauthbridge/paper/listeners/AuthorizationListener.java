@@ -7,16 +7,35 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import ru.baronessdev.paid.auth.api.events.AuthPlayerLoginEvent;
+import ru.baronessdev.paid.auth.api.events.AuthPlayerRegisterEvent;
+import ru.baronessdev.paid.auth.api.events.AuthPlayerSessionSavedEvent;
 
 public class AuthorizationListener implements Listener {
+
     private final MessageManager messageManager;
+
     public AuthorizationListener(MessageManager messageManager) {
         this.messageManager = messageManager;
     }
-    @EventHandler
+
+    @EventHandler(ignoreCancelled = true)
     public void onPlayerLogin(AuthPlayerLoginEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.LOGIN);
+        messageManager.sendMessage(message);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerLogin(AuthPlayerSessionSavedEvent event) {
+        Player player = event.getPlayer();
+        Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.LOGIN);
+        messageManager.sendMessage(message);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerRegister(AuthPlayerRegisterEvent event) {
+        Player player = event.getPlayer();
+        Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.REGISTER);
         messageManager.sendMessage(message);
     }
 }

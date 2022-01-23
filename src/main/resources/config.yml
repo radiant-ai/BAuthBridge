@@ -1,0 +1,2 @@
+auth_server: "auth"
+fallback_server: "lobby"

@@ -1,4 +1,4 @@
 name: BAuthBridge
 version: '${project.version}'
 main: fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall
-authors: [ Radiant_Shiny ]
+author: Radiant_Shiny

@@ -1,35 +1,37 @@
 package fun.milkyway.bauthbridge.waterfall.listeners;
 
-import fun.milkyway.bauthbridge.waterfall.managers.AuthorizedPlayerManager;
+import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
+import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
+import io.github.waterfallmc.waterfall.event.ProxyDefineCommandsEvent;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.ChatEvent;
-import net.md_5.bungee.api.event.PermissionCheckEvent;
-import net.md_5.bungee.api.event.TabCompleteEvent;
-import net.md_5.bungee.api.event.TabCompleteResponseEvent;
+import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
 public class SecurityListener implements Listener {
-    private final Plugin plugin;
-    private final AuthorizedPlayerManager authorizedPlayerManager;
-    public SecurityListener(Plugin plugin, AuthorizedPlayerManager authorizedPlayerManager) {
+    private final BAuthBridgeWaterfall plugin;
+    private final BridgedPlayerManager bridgedPlayerManager;
+    public SecurityListener(BAuthBridgeWaterfall plugin, BridgedPlayerManager bridgedPlayerManager) {
         this.plugin = plugin;
-        this.authorizedPlayerManager = authorizedPlayerManager;
+        this.bridgedPlayerManager = bridgedPlayerManager;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onCommand(ChatEvent event) {
         Connection connection = event.getSender();
         if (connection instanceof ProxiedPlayer proxiedPlayer) {
-            if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
-                if (!isAllowedString(event.getMessage())) {
-                    event.setCancelled(true);
-                }
+            if (bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+                return;
             }
+            if (isAllowedString(event.getMessage()) &&
+                    proxiedPlayer.getServer().getInfo().getName().equals(plugin.getConfiguration().getString("auth_server", "auth"))) {
+                return;
+            }
+            event.setCancelled(true);
         }
     }
 
@@ -37,7 +39,7 @@ public class SecurityListener implements Listener {
     public void onPermissionCheck(PermissionCheckEvent event) {
         CommandSender commandSender = event.getSender();
         if (commandSender instanceof ProxiedPlayer proxiedPlayer) {
-            if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+            if (!bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
                 event.setHasPermission(false);
             }
         }
@@ -46,7 +48,7 @@ public class SecurityListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onTabcompletePre(TabCompleteEvent event) {
         if (event.getSender() instanceof ProxiedPlayer proxiedPlayer) {
-            if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+            if (!bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
                 event.getSuggestions().clear();
             }
         }
@@ -56,9 +58,25 @@ public class SecurityListener implements Listener {
     public void onTabcompletePost(TabCompleteResponseEvent event) {
         Connection connection = event.getSender();
         if (connection instanceof ProxiedPlayer proxiedPlayer) {
-            if (!authorizedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+            if (!bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
                 event.getSuggestions().removeIf(suggestion -> !isAllowedCommand(suggestion));
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onServerConnect(ServerConnectEvent event) {
+        ProxiedPlayer proxiedPlayer = event.getPlayer();
+        String authServerName = plugin.getConfiguration().getString("auth_server", "auth");
+        if (event.getTarget().getName().equals(authServerName)) {
+            return;
+        }
+        if (!bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+            ServerInfo newTarget = plugin.getProxy().getServerInfo(authServerName);
+            if (newTarget == null)
+                event.setCancelled(true);
+            else
+                event.setTarget(newTarget);
         }
     }
 
