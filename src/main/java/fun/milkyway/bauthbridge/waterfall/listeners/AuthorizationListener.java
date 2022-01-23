@@ -60,8 +60,7 @@ public class AuthorizationListener implements Listener {
     @EventHandler
     public void onServerConnect(ServerConnectedEvent event) {
         String serverName = event.getServer().getInfo().getName();
-        if (!serverName.equals(plugin.getConfiguration().getString("auth_server", "auth")) &&
-                !serverName.equals(plugin.getConfiguration().getString("fallback_server", "lobby"))) {
+        if (!serverName.equals(plugin.getConfiguration().getString("auth_server", "auth"))) {
             bridgedPlayerManager.setPreviousServer(event.getPlayer().getUniqueId(), serverName);
         }
     }
@@ -104,13 +103,15 @@ public class AuthorizationListener implements Listener {
                             proxiedPlayer.connect(finalTargetServer, (result2, error2) -> {
                                 if (!result2 && proxiedPlayer.isConnected()) {
                                     plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
-                                            .disconnect(TextComponent.fromLegacyText("Сервера недоступны!", ChatColor.RED));
+                                            .disconnect(TextComponent.fromLegacyText(plugin
+                                                    .getConfiguration().getString("server_unavailable_message", "")));
                                 }
                             }, false, 2000);
                         }
                         else {
                             plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
-                                    .disconnect(TextComponent.fromLegacyText("Сервера недоступны!", ChatColor.RED));
+                                    .disconnect(TextComponent.fromLegacyText(plugin
+                                            .getConfiguration().getString("server_unavailable_message", "")));
                         }
                     }
                 }, false, 2000);

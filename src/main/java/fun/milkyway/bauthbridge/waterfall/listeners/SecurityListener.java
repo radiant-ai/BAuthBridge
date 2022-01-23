@@ -4,6 +4,8 @@ import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
 import io.github.waterfallmc.waterfall.event.ProxyDefineCommandsEvent;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -11,6 +13,10 @@ import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.UUID;
 
 public class SecurityListener implements Listener {
     private final BAuthBridgeWaterfall plugin;
@@ -68,15 +74,50 @@ public class SecurityListener implements Listener {
     public void onServerConnect(ServerConnectEvent event) {
         ProxiedPlayer proxiedPlayer = event.getPlayer();
         String authServerName = plugin.getConfiguration().getString("auth_server", "auth");
+        boolean isAuthorized = bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId());
         if (event.getTarget().getName().equals(authServerName)) {
-            return;
+            if (isAuthorized && plugin.getConfiguration().getBoolean("disallow_connect_to_auth", true)) {
+                event.setCancelled(true);
+                proxiedPlayer.sendMessage((UUID) null, TextComponent
+                        .fromLegacyText(plugin.getConfiguration().getString("auth_server_disallowed_message", "")));
+            }
+            else {
+                return;
+            }
         }
-        if (!bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+        if (!isAuthorized) {
             ServerInfo newTarget = plugin.getProxy().getServerInfo(authServerName);
             if (newTarget == null)
                 event.setCancelled(true);
             else
                 event.setTarget(newTarget);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void playerServerDisconnectedEvent(ServerKickEvent event) {
+        ProxiedPlayer proxiedPlayer = event.getPlayer();
+        String authServerName = plugin.getConfiguration().getString("auth_server", "auth");
+        String fallbackServerName = plugin.getConfiguration().getString("fallback_server", "lobby");
+        ServerInfo serverInfo = event.getKickedFrom();
+        if (!serverInfo.getName().equals(authServerName) &&
+                !serverInfo.getName().equals(fallbackServerName)) {
+            ServerInfo toConnect;
+            if (bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
+                toConnect = plugin.getProxy().getServerInfo(fallbackServerName);
+            }
+            else {
+                toConnect = plugin.getProxy().getServerInfo(authServerName);
+            }
+            if (toConnect != null) {
+                event.setCancelServer(toConnect);
+                BaseComponent[] components = event.getKickReasonComponent();
+                ArrayList<BaseComponent> newComponents = new ArrayList<>();
+                newComponents.addAll(Arrays.stream(TextComponent.fromLegacyText(plugin.getConfiguration().getString("kick_reason", ""))).toList());
+                newComponents.addAll(Arrays.stream(components).toList());
+                proxiedPlayer.sendMessage((UUID) null, newComponents.toArray(components));
+                event.setCancelled(true);
+            }
         }
     }
 
