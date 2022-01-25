@@ -25,9 +25,6 @@ public class BridgedPlayerManager {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
         return bridgedPlayer != null && authorizedPlayers.get(uuid).isAuthorized();
     }
-    public BridgedPlayer getAuthorizedPlayer(UUID uuid) {
-        return authorizedPlayers.get(uuid);
-    }
     public BridgedPlayer setPreviousServer(UUID uuid, String previousServer) {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
         if (bridgedPlayer != null && bridgedPlayer.isAuthorized()) {

@@ -18,7 +18,7 @@ public class MessageManager {
     public void sendMessage(Message message) {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Forward");
-        out.writeUTF("ALL");
+        out.writeUTF("BungeeCord");
         out.writeUTF(MessageOptions.CHANNELNAME);
 
         ByteArrayOutputStream msgbytes = new ByteArrayOutputStream();

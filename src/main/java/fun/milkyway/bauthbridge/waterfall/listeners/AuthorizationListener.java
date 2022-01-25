@@ -19,6 +19,7 @@ import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.event.EventPriority;
 
 public class AuthorizationListener implements Listener {
     private final BAuthBridgeWaterfall plugin;
@@ -29,25 +30,22 @@ public class AuthorizationListener implements Listener {
         this.bridgedPlayerManager = bridgedPlayerManager;
         this.configuration = plugin.getConfiguration();
     }
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onPluginMessage(PluginMessageEvent event) {
         if (event.getSender() instanceof Server && event.getTag().equals("BungeeCord")) {
             ByteArrayDataInput in = ByteStreams.newDataInput(event.getData());
             if (!in.readUTF().equals("Forward")) {
                 return;
             }
-            if (!in.readUTF().equals("ALL")) {
+            if (!in.readUTF().equals("BungeeCord")) {
                 return;
             }
             if (!in.readUTF().equals(MessageOptions.CHANNELNAME)) {
                 return;
             }
 
-            BridgedPlayer bridgedPlayer = readStreamAndAuthorize(in);
-
-            if (bridgedPlayer != null) {
-                connectToPreviousServer(bridgedPlayer);
-            }
+            readStreamAndAct(in);
+            event.setCancelled(true); //don't let anything else to handle this message
         }
     }
     
@@ -65,7 +63,7 @@ public class AuthorizationListener implements Listener {
         }
     }
     
-    private BridgedPlayer readStreamAndAuthorize(ByteArrayDataInput in) {
+    private void readStreamAndAct(ByteArrayDataInput in) {
         short dataLength = in.readShort();
         byte[] dataBytes = new byte[dataLength];
         in.readFully(dataBytes);
@@ -73,52 +71,103 @@ public class AuthorizationListener implements Listener {
         String messageString = dataIn.readUTF();
 
         AuthorizationMessage message;
+
         try {
             message = new AuthorizationMessage(messageString);
         }
         catch (IllegalArgumentException exception) {
             Utils.exceptionWarningIntoLogger(plugin.getLogger(), exception);
-            return null;
+            return;
         }
-        return bridgedPlayerManager.authorizePlayer(message.getPlayerUUID());
+
+        //authorize player on LOGIN and REGISTER, but only if not yet authorized
+        if ((message.getAction().equals(AuthorizationMessage.Action.LOGIN)
+                || message.getAction().equals(AuthorizationMessage.Action.REGISTER))
+                && !bridgedPlayerManager.isAuthorized(message.getPlayerUUID())) {
+            connectToPreviousServer(bridgedPlayerManager.authorizePlayer(message.getPlayerUUID()));
+        }
+        //unauthorize player on PREREGISTER, PRELOGIN and LOGOUT
+        else {
+            bridgedPlayerManager.unauthorizePlayer(message.getPlayerUUID());
+        }
     }
 
     private void connectToPreviousServer(BridgedPlayer bridgedPlayer) {
+        if (!bridgedPlayer.isAuthorized()) {
+            return;
+        }
         ServerInfo fallBackServer = plugin.getProxy()
                 .getServerInfo(configuration.getString("fallback_server", "lobby"));
         ProxiedPlayer proxiedPlayer = plugin.getProxy().getPlayer(bridgedPlayer.getUuid());
         if (proxiedPlayer != null && proxiedPlayer.isConnected()) {
+
             ServerInfo targetServer;
             if (bridgedPlayer.getPreviousServer() != null) {
+                //use player's previous server
                 targetServer = plugin.getProxy().getServerInfo(bridgedPlayer.getPreviousServer());
             }
             else {
+                //if there is none, use the fallback (lobby) server
                 targetServer = fallBackServer;
             }
-            ServerInfo finalTargetServer = targetServer;
-            if (finalTargetServer != null) {
+
+            if (targetServer != null || fallBackServer != null) {
                 proxiedPlayer.connect(targetServer, (result, error) -> {
                     if (!result && proxiedPlayer.isConnected()) {
-                        if (finalTargetServer != fallBackServer && fallBackServer != null) {
-                            proxiedPlayer.connect(finalTargetServer, (result2, error2) -> {
-                                if (!result2 && proxiedPlayer.isConnected()) {
-                                    plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
-                                            .disconnect(TextComponent.fromLegacyText(plugin
-                                                    .getConfiguration().getString("server_unavailable_message", "")));
-                                }
-                            }, false, 2000);
-                        }
-                        else {
+
+                        //if the fallback server was not found
+                        if (fallBackServer == null) {
+                            plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to fallback server, but it was null!");
                             plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
                                     .disconnect(TextComponent.fromLegacyText(plugin
                                             .getConfiguration().getString("server_unavailable_message", "")));
+                            return;
                         }
+
+                        //if it is the same server, add some delay to the retry
+                        if (targetServer.getName().equals(fallBackServer.getName())) {
+                            plugin.getLogger().warning("Retrying to connect player "+bridgedPlayer.getUuid()+" to the fallback server...");
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                plugin.getLogger().warning("Thread waiting for connection retry for player "+bridgedPlayer.getUuid()+" was interrupted!");
+                                Utils.exceptionWarningIntoLogger(plugin.getLogger(), e);
+                                return;
+                            }
+                        }
+
+                        proxiedPlayer.connect(fallBackServer, (result2, error2) -> {
+                            if (!result2 && proxiedPlayer.isConnected()) {
+                                plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to the fallback server, but was not ables to do so!");
+                                plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
+                                        .disconnect(TextComponent.fromLegacyText(plugin
+                                                .getConfiguration().getString("server_unavailable_message", "")));
+                            }
+                            else if (result2 && proxiedPlayer.isConnected()) {
+                                plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
+                                        .sendMessage(TextComponent.fromLegacyText(plugin
+                                                .getConfiguration().getString("server_previous_not_available", "")));
+                                //fix BAuth lagged out title msg
+                                plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
+                                        .sendTitle(plugin.getProxy().createTitle().reset());
+                            }
+                        }, false, 2000);
+                    }
+                    else if (result && proxiedPlayer.isConnected()) {
+                        plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
+                                .sendMessage(TextComponent.fromLegacyText(plugin
+                                        .getConfiguration().getString("server_connect_previous", "")+ChatColor.GRAY+targetServer.getName()));
+                        //fix BAuth lagged out title msg
+                        plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
+                                .sendTitle(plugin.getProxy().createTitle().reset());
                     }
                 }, false, 2000);
             }
             else {
+                plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to any of the servers, but both were null!");
                 plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
-                        .disconnect(TextComponent.fromLegacyText("Сервера недоступны!", ChatColor.RED));
+                        .disconnect(TextComponent.fromLegacyText(plugin
+                                .getConfiguration().getString("server_unavailable_message", "")));
             }
         }
     }

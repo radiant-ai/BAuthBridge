@@ -4,6 +4,7 @@ import fun.milkyway.bauthbridge.common.utils.Utils;
 import fun.milkyway.bauthbridge.waterfall.listeners.AuthorizationListener;
 import fun.milkyway.bauthbridge.waterfall.listeners.SecurityListener;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -17,33 +18,75 @@ public class BAuthBridgeWaterfall extends Plugin {
     @Override
     public void onEnable()
     {
-        File dataFolder = getDataFolder();
-        if (!dataFolder.exists())
-            dataFolder.mkdir();
-        InputStream inputStream = getResourceAsStream("config.yml");
-        File configFile = new File(dataFolder, "config.yml");
-        try {
-            if (!configFile.exists()) {
-                OutputStream outputStream = new FileOutputStream(configFile);
-                inputStream.transferTo(outputStream);
-                outputStream.close();
-                inputStream.close();
-            }
-            configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
-        } catch (IOException exception) {
-            Utils.exceptionWarningIntoLogger(getLogger(), exception);
+        if (setupConfig()) {
+            getLogger().info(ChatColor.DARK_GREEN+"Loaded config successfully!");
+            String authServerName = configuration.getString("auth_server", "auth");
+            if (getProxy().getServerInfo(authServerName) != null)
+                getLogger().info(ChatColor.DARK_GREEN+"Successfully added server "+ChatColor.YELLOW+
+                        authServerName+ChatColor.DARK_GREEN+" as the auth server!");
+            String fallbackServerName = configuration.getString("fallback_server", "lobby");
+            if (getProxy().getServerInfo(fallbackServerName) != null)
+                getLogger().info(ChatColor.DARK_GREEN+"Successfully added server "+ChatColor.YELLOW+
+                        fallbackServerName+ChatColor.DARK_GREEN+" as the lobby/fallback server!");
+            bridgedPlayerManager = new BridgedPlayerManager();
+            getLogger().info(ChatColor.DARK_GREEN+"Initialized player manager!");
+            getProxy().getPluginManager().registerListener(this, new AuthorizationListener(this, bridgedPlayerManager));
+            getLogger().info(ChatColor.DARK_GREEN+"Registered authorization listener!");
+            getProxy().getPluginManager().registerListener(this, new SecurityListener(this, bridgedPlayerManager));
+            getLogger().info(ChatColor.DARK_GREEN+"Registered security listener!");
         }
-        bridgedPlayerManager = new BridgedPlayerManager();
-        getProxy().getPluginManager().registerListener(this, new AuthorizationListener(this, bridgedPlayerManager));
-        getProxy().getPluginManager().registerListener(this, new SecurityListener(this, bridgedPlayerManager));
+        else {
+            getLogger().info(ChatColor.DARK_RED+"Failed to load config!");
+            getProxy().stop("Authorization bridge failed, shutting down!");
+        }
     }
 
     @Override
     public void onDisable()
     {
+        getProxy().getPluginManager().unregisterListeners(this);
+        getLogger().info(ChatColor.YELLOW+"Unregistered all listeners!");
     }
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    private boolean setupConfig() {
+        File dataFolder = getDataFolder();
+        if (!dataFolder.exists())
+            dataFolder.mkdir();
+        InputStream inputStream = getResourceAsStream("config_bungee.yml");
+        File configFile = new File(dataFolder, "config.yml");
+        try {
+            if (!configFile.exists()) {
+                configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(inputStream);
+                inputStream.close();
+                ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, configFile);
+                getLogger().info(ChatColor.GREEN+"Saved default config file config.yml!");
+            }
+            else {
+                configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+                Configuration newConfiguration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(inputStream);
+                ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+                boolean copyNew = false;
+                for (String key : newConfiguration.getKeys()) {
+                    Object obj = configuration.get(key);
+                    if (obj == null) {
+                        configuration.set(key, newConfiguration.get(key));
+                        copyNew = true;
+                    }
+                }
+                ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, configFile);
+                inputStream.close();
+                if (copyNew) {
+                    getLogger().info(ChatColor.GREEN+"Copied new config values into the config.yml!");
+                }
+            }
+        } catch (IOException exception) {
+            Utils.exceptionWarningIntoLogger(getLogger(), exception);
+            return false;
+        }
+        return true;
     }
 }

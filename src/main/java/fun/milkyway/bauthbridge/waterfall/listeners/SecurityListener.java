@@ -94,6 +94,11 @@ public class SecurityListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void serverDisconnectEvent(ServerDisconnectEvent event) {
+        plugin.getLogger().info(event.getTarget().getName());
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void playerServerDisconnectedEvent(ServerKickEvent event) {
         ProxiedPlayer proxiedPlayer = event.getPlayer();
@@ -109,7 +114,7 @@ public class SecurityListener implements Listener {
             else {
                 toConnect = plugin.getProxy().getServerInfo(authServerName);
             }
-            if (toConnect != null) {
+            if (toConnect != null && !event.getCause().equals(ServerKickEvent.Cause.LOST_CONNECTION)) {
                 event.setCancelServer(toConnect);
                 BaseComponent[] components = event.getKickReasonComponent();
                 ArrayList<BaseComponent> newComponents = new ArrayList<>();
@@ -120,6 +125,8 @@ public class SecurityListener implements Listener {
             }
         }
     }
+
+
 
     private boolean isAllowedString(String string) {
         return isAllowedCommand(string) || isAllowedMessage(string);

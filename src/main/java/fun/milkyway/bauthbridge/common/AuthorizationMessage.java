@@ -8,7 +8,9 @@ public class AuthorizationMessage implements Message {
     public enum Action {
         LOGIN,
         REGISTER,
-        LOGOUT
+        LOGOUT,
+        PRELOGIN,
+        PREREGISTER
     }
     public AuthorizationMessage(UUID playerUUID, Action action) {
         this.playerUUID = playerUUID;

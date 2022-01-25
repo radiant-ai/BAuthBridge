@@ -6,9 +6,7 @@ import fun.milkyway.bauthbridge.paper.managers.MessageManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import ru.baronessdev.paid.auth.api.events.AuthPlayerLoginEvent;
-import ru.baronessdev.paid.auth.api.events.AuthPlayerRegisterEvent;
-import ru.baronessdev.paid.auth.api.events.AuthPlayerSessionSavedEvent;
+import ru.baronessdev.paid.auth.api.events.*;
 
 public class AuthorizationListener implements Listener {
 
@@ -36,6 +34,20 @@ public class AuthorizationListener implements Listener {
     public void onPlayerRegister(AuthPlayerRegisterEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.REGISTER);
+        messageManager.sendMessage(message);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerRegister(AuthPlayerPreRegisterEvent event) {
+        Player player = event.getPlayer();
+        Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.PREREGISTER);
+        messageManager.sendMessage(message);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerLogin(AuthPlayerPreLoginEvent event) {
+        Player player = event.getPlayer();
+        Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.PRELOGIN);
         messageManager.sendMessage(message);
     }
 }
