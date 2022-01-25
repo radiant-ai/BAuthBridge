@@ -10,4 +10,5 @@ Bridge for Waterfall for [BaronessAuth](https://market.baronessdev.ru/shop/baron
 ### Notes
 - Only latest Waterfall/Paper is supported
 ### Installation
-- Drop the jar file into plugins folder of Waterfall and Paper
+- Drop the jar file into plugins folder of Waterfall and Paper AUTH server
+- Specify auth server name and lobby server name in the config file in waterfall
