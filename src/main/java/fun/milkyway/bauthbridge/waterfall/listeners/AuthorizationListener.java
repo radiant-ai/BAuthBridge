@@ -6,7 +6,6 @@ import fun.milkyway.bauthbridge.common.AuthorizationMessage;
 import fun.milkyway.bauthbridge.common.pojo.MessageOptions;
 import fun.milkyway.bauthbridge.common.utils.Utils;
 import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
-import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayer;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -92,32 +91,39 @@ public class AuthorizationListener implements Listener {
         }
     }
 
-    private void connectToPreviousServer(BridgedPlayer bridgedPlayer) {
+    private void connectToPreviousServer(BridgedPlayerManager.BridgedPlayer bridgedPlayer) {
+        if (!plugin.getProxy().getPlayer(bridgedPlayer.getUuid()).isConnected()) {
+            return;
+        }
         if (!bridgedPlayer.isAuthorized()) {
             return;
         }
         ServerInfo fallBackServer = plugin.getProxy()
                 .getServerInfo(configuration.getString("fallback_server", "lobby"));
         ProxiedPlayer proxiedPlayer = plugin.getProxy().getPlayer(bridgedPlayer.getUuid());
-        if (proxiedPlayer != null && proxiedPlayer.isConnected()) {
+        if (proxiedPlayer != null) {
 
-            ServerInfo targetServer;
+            ServerInfo targetServer = null;
+
             if (bridgedPlayer.getPreviousServer() != null) {
                 //use player's previous server
                 targetServer = plugin.getProxy().getServerInfo(bridgedPlayer.getPreviousServer());
             }
-            else {
-                //if there is none, use the fallback (lobby) server
+
+            if (targetServer == null) {
+                //target server does not exist, use fallback server
                 targetServer = fallBackServer;
             }
 
-            if (targetServer != null || fallBackServer != null) {
+            if (targetServer != null) {
+                ServerInfo finalTargetServer = targetServer;
                 proxiedPlayer.connect(targetServer, (result, error) -> {
                     if (!result && proxiedPlayer.isConnected()) {
+                        plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to the previous server, but failed: "+error.getMessage());
 
                         //if the fallback server was not found
                         if (fallBackServer == null) {
-                            plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to fallback server, but it was null!");
+                            plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to the fallback server, but it was null!");
                             plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
                                     .disconnect(TextComponent.fromLegacyText(plugin
                                             .getConfiguration().getString("server_unavailable_message", "")));
@@ -125,10 +131,10 @@ public class AuthorizationListener implements Listener {
                         }
 
                         //if it is the same server, add some delay to the retry
-                        if (targetServer.getName().equals(fallBackServer.getName())) {
+                        if (finalTargetServer.getName().equals(fallBackServer.getName())) {
                             plugin.getLogger().warning("Retrying to connect player "+bridgedPlayer.getUuid()+" to the fallback server...");
                             try {
-                                Thread.sleep(2000);
+                                Thread.sleep(1000);
                             } catch (InterruptedException e) {
                                 plugin.getLogger().warning("Thread waiting for connection retry for player "+bridgedPlayer.getUuid()+" was interrupted!");
                                 Utils.exceptionWarningIntoLogger(plugin.getLogger(), e);
@@ -138,7 +144,7 @@ public class AuthorizationListener implements Listener {
 
                         proxiedPlayer.connect(fallBackServer, (result2, error2) -> {
                             if (!result2 && proxiedPlayer.isConnected()) {
-                                plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to the fallback server, but was not ables to do so!");
+                                plugin.getLogger().warning("Tried to connect player "+bridgedPlayer.getUuid()+" to the fallback server, but was not able to do so: "+error2.getMessage());
                                 plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
                                         .disconnect(TextComponent.fromLegacyText(plugin
                                                 .getConfiguration().getString("server_unavailable_message", "")));
@@ -156,7 +162,7 @@ public class AuthorizationListener implements Listener {
                     else if (result && proxiedPlayer.isConnected()) {
                         plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
                                 .sendMessage(TextComponent.fromLegacyText(plugin
-                                        .getConfiguration().getString("server_connect_previous", "")+ChatColor.GRAY+targetServer.getName()));
+                                        .getConfiguration().getString("server_connect_previous", "")+ChatColor.GRAY+ finalTargetServer.getName()));
                         //fix BAuth lagged out title msg
                         plugin.getProxy().getPlayer(bridgedPlayer.getUuid())
                                 .sendTitle(plugin.getProxy().createTitle().reset());

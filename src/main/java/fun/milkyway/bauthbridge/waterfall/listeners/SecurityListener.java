@@ -94,11 +94,6 @@ public class SecurityListener implements Listener {
         }
     }
 
-    @EventHandler
-    public void serverDisconnectEvent(ServerDisconnectEvent event) {
-        plugin.getLogger().info(event.getTarget().getName());
-    }
-
     @EventHandler(priority = EventPriority.HIGHEST)
     public void playerServerDisconnectedEvent(ServerKickEvent event) {
         ProxiedPlayer proxiedPlayer = event.getPlayer();

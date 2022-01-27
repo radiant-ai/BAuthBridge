@@ -15,7 +15,7 @@ public class MessageManager {
         this.plugin = plugin;
         plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "BungeeCord");
     }
-    public void sendMessage(Message message) {
+    public void sendMessage(Message message, int delayTicks) {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Forward");
         out.writeUTF("BungeeCord");
@@ -34,6 +34,10 @@ public class MessageManager {
         out.writeShort(msgbytes.toByteArray().length);
         out.write(msgbytes.toByteArray());
 
-        plugin.getServer().sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+        plugin.getServer().getScheduler().runTaskLaterAsynchronously(
+                plugin,
+                () -> plugin.getServer().sendPluginMessage(plugin, "BungeeCord", out.toByteArray()),
+                delayTicks
+        );
     }
 }

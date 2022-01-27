@@ -1,12 +1,19 @@
 package fun.milkyway.bauthbridge.waterfall.managers;
 
+import fun.milkyway.bauthbridge.common.pojo.PersistenceOptions;
+import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class BridgedPlayerManager {
+    private final BAuthBridgeWaterfall plugin;
+    private final PersistenceManager persistenceManager;
     private final Map<UUID, BridgedPlayer> authorizedPlayers;
-    public BridgedPlayerManager() {
+    public BridgedPlayerManager(BAuthBridgeWaterfall plugin) {
+        this.plugin = plugin;
+        this.persistenceManager = new PersistenceManager(plugin);
         authorizedPlayers = new HashMap<>();
     }
     public BridgedPlayer authorizePlayer(UUID uuid) {
@@ -31,5 +38,57 @@ public class BridgedPlayerManager {
             authorizedPlayers.put(uuid, new BridgedPlayer(uuid, true, previousServer));
         }
         return authorizedPlayers.get(uuid);
+    }
+    public boolean saveAll(String fileName) {
+        PersistenceManager.Persistance persistance = persistenceManager.getPersistence(fileName);
+        if (persistance != null) {
+            for (Map.Entry<UUID, BridgedPlayer> entry : authorizedPlayers.entrySet()) {
+                BridgedPlayer bridgedPlayer = entry.getValue();
+                if (bridgedPlayer.getPreviousServer() != null) {
+                    persistance.getConfiguration().set(PersistenceOptions.SECTION_NAME+"."+entry.getKey().toString(), bridgedPlayer.getPreviousServer());
+                }
+            }
+            persistenceManager.savePersistence(persistance);
+            return true;
+        }
+        return false;
+    }
+    public boolean loadAll(String fileName) {
+        PersistenceManager.Persistance persistence = persistenceManager.getPersistence(fileName);
+        if (persistence != null) {
+            for (String key : persistence.getConfiguration().getSection(PersistenceOptions.SECTION_NAME).getKeys()) {
+                UUID uuid = UUID.fromString(key);
+                authorizedPlayers.put(uuid, new BridgedPlayer(
+                        uuid,
+                        false,
+                        persistence.getConfiguration().getString(PersistenceOptions.SECTION_NAME+"."+uuid))
+                );
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public class BridgedPlayer {
+        private final UUID uuid;
+        private final boolean isAuthorized;
+        private final String previousServer;
+        public BridgedPlayer(UUID uuid, boolean isAuthorized, String previousServer) {
+            this.uuid = uuid;
+            this.isAuthorized = isAuthorized;
+            this.previousServer = previousServer;
+        }
+
+        public UUID getUuid() {
+            return uuid;
+        }
+
+        public boolean isAuthorized() {
+            return isAuthorized;
+        }
+
+        public String getPreviousServer() {
+            return previousServer;
+        }
     }
 }

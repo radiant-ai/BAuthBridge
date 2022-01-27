@@ -1,5 +1,6 @@
 package fun.milkyway.bauthbridge.waterfall;
 
+import fun.milkyway.bauthbridge.common.pojo.PersistenceOptions;
 import fun.milkyway.bauthbridge.common.utils.Utils;
 import fun.milkyway.bauthbridge.waterfall.listeners.AuthorizationListener;
 import fun.milkyway.bauthbridge.waterfall.listeners.SecurityListener;
@@ -20,32 +21,46 @@ public class BAuthBridgeWaterfall extends Plugin {
     {
         if (setupConfig()) {
             getLogger().info(ChatColor.DARK_GREEN+"Loaded config successfully!");
+
             String authServerName = configuration.getString("auth_server", "auth");
             if (getProxy().getServerInfo(authServerName) != null)
                 getLogger().info(ChatColor.DARK_GREEN+"Successfully added server "+ChatColor.YELLOW+
                         authServerName+ChatColor.DARK_GREEN+" as the auth server!");
+
             String fallbackServerName = configuration.getString("fallback_server", "lobby");
             if (getProxy().getServerInfo(fallbackServerName) != null)
                 getLogger().info(ChatColor.DARK_GREEN+"Successfully added server "+ChatColor.YELLOW+
                         fallbackServerName+ChatColor.DARK_GREEN+" as the lobby/fallback server!");
-            bridgedPlayerManager = new BridgedPlayerManager();
+
+            bridgedPlayerManager = new BridgedPlayerManager(this);
+            if (bridgedPlayerManager.loadAll(PersistenceOptions.FILE_NAME)) {
+                getLogger().info(ChatColor.DARK_GREEN+"Loaded all players' data!");
+            }
+            else {
+                getLogger().info(ChatColor.DARK_RED+"Failed to load players' data!");
+            }
             getLogger().info(ChatColor.DARK_GREEN+"Initialized player manager!");
-            getProxy().getPluginManager().registerListener(this, new AuthorizationListener(this, bridgedPlayerManager));
-            getLogger().info(ChatColor.DARK_GREEN+"Registered authorization listener!");
-            getProxy().getPluginManager().registerListener(this, new SecurityListener(this, bridgedPlayerManager));
-            getLogger().info(ChatColor.DARK_GREEN+"Registered security listener!");
+
+            setupListeners();
         }
         else {
             getLogger().info(ChatColor.DARK_RED+"Failed to load config!");
-            getProxy().stop("Authorization bridge failed, shutting down!");
+            getProxy().stop(ChatColor.DARK_RED+"Authorization bridge failed, shutting down!");
         }
     }
 
     @Override
     public void onDisable()
     {
+        if (bridgedPlayerManager.saveAll(PersistenceOptions.FILE_NAME)) {
+            getLogger().info(ChatColor.DARK_GREEN+"Saved all players!");
+        }
+        else {
+            getLogger().info(ChatColor.DARK_RED+"Failed to save players!");
+        }
+
         getProxy().getPluginManager().unregisterListeners(this);
-        getLogger().info(ChatColor.YELLOW+"Unregistered all listeners!");
+        getLogger().info(ChatColor.DARK_GREEN+"Unregistered all listeners!");
     }
 
     public Configuration getConfiguration() {
@@ -88,5 +103,13 @@ public class BAuthBridgeWaterfall extends Plugin {
             return false;
         }
         return true;
+    }
+
+
+    private void setupListeners() {
+        getProxy().getPluginManager().registerListener(this, new AuthorizationListener(this, bridgedPlayerManager));
+        getLogger().info(ChatColor.DARK_GREEN+"Registered authorization listener!");
+        getProxy().getPluginManager().registerListener(this, new SecurityListener(this, bridgedPlayerManager));
+        getLogger().info(ChatColor.DARK_GREEN+"Registered security listener!");
     }
 }

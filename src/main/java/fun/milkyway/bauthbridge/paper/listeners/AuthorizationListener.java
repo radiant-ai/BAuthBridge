@@ -20,34 +20,34 @@ public class AuthorizationListener implements Listener {
     public void onPlayerLogin(AuthPlayerLoginEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.LOGIN);
-        messageManager.sendMessage(message);
+        messageManager.sendMessage(message, 2);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerLogin(AuthPlayerSessionSavedEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.LOGIN);
-        messageManager.sendMessage(message);
+        messageManager.sendMessage(message, 2);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerRegister(AuthPlayerRegisterEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.REGISTER);
-        messageManager.sendMessage(message);
+        messageManager.sendMessage(message, 2);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerRegister(AuthPlayerPreRegisterEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.PREREGISTER);
-        messageManager.sendMessage(message);
+        messageManager.sendMessage(message, 2);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerLogin(AuthPlayerPreLoginEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.PRELOGIN);
-        messageManager.sendMessage(message);
+        messageManager.sendMessage(message, 2);
     }
 }
