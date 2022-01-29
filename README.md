@@ -4,7 +4,7 @@
 Bridge for Waterfall for [BaronessAuth](https://market.baronessdev.ru/shop/baronessauth.1/)
 ### Features
 - Stop execution of any Paper/Waterfall commands until authorized
-- Redirect to the lobby/last played server after log in
+- Redirect to the lobby/last played server after log in (with a retry logic)
 - Do not allow connection to backend servers while not authorized
 - Do not allow connecting back to the authorization server
 ### Notes
