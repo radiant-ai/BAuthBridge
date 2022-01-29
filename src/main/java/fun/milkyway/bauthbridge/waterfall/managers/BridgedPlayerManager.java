@@ -31,7 +31,10 @@ public class BridgedPlayerManager {
     }
     public boolean isAuthorized(UUID uuid) {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
-        return bridgedPlayer != null && authorizedPlayers.get(uuid).isAuthorized();
+        if (bridgedPlayer == null) {
+            authorizedPlayers.put(uuid, new BridgedPlayer(uuid, false, null));
+        }
+        return authorizedPlayers.get(uuid).isAuthorized();
     }
     public BridgedPlayer getPlayer(UUID uuid) {
         return authorizedPlayers.get(uuid);

@@ -3,8 +3,9 @@ fallback_server: "lobby"
 disallow_connect_to_auth: true
 retry_frequency: 1000
 retry_to_prev_count: 3
-wait_for_connection_previous: "§7Попытка подлючиться к предыдущему серверу: "
-wait_for_connection_fallback: "§7Попытка подлючиться к лобби: "
+retry_max: 15
+wait_for_connection_previous: "§7Попытка подлючиться к предыдущему серверу..."
+wait_for_connection_fallback: "§7Попытка подлючиться к лобби..."
 server_unavailable_message: "§cНе удалось подключиться к вашему последнему серверу или лобби!"
 server_connect_previous: "§aМы вас вернули на ваш предыдущий сервер: "
 server_connect_fallback: "§aМы вас подключили в лобби."
