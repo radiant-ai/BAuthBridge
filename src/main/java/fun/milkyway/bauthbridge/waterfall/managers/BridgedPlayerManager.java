@@ -2,10 +2,11 @@ package fun.milkyway.bauthbridge.waterfall.managers;
 
 import fun.milkyway.bauthbridge.common.pojo.PersistenceOptions;
 import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
+import net.md_5.bungee.api.config.ServerInfo;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BridgedPlayerManager {
     private final BAuthBridgeWaterfall plugin;
@@ -14,7 +15,7 @@ public class BridgedPlayerManager {
     public BridgedPlayerManager(BAuthBridgeWaterfall plugin) {
         this.plugin = plugin;
         this.persistenceManager = new PersistenceManager(plugin);
-        authorizedPlayers = new HashMap<>();
+        authorizedPlayers = new ConcurrentHashMap<>();
     }
     public BridgedPlayer authorizePlayer(UUID uuid) {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
@@ -31,6 +32,9 @@ public class BridgedPlayerManager {
     public boolean isAuthorized(UUID uuid) {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
         return bridgedPlayer != null && authorizedPlayers.get(uuid).isAuthorized();
+    }
+    public BridgedPlayer getPlayer(UUID uuid) {
+        return authorizedPlayers.get(uuid);
     }
     public BridgedPlayer setPreviousServer(UUID uuid, String previousServer) {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
@@ -89,6 +93,10 @@ public class BridgedPlayerManager {
 
         public String getPreviousServer() {
             return previousServer;
+        }
+
+        public ServerInfo getPreviousServerInfo() {
+            return previousServer != null ? plugin.getProxy().getServerInfo(previousServer) : null;
         }
     }
 }
