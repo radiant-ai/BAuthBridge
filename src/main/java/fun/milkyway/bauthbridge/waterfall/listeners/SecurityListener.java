@@ -2,8 +2,6 @@ package fun.milkyway.bauthbridge.waterfall.listeners;
 
 import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
-import io.github.waterfallmc.waterfall.event.ProxyDefineCommandsEvent;
-import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -38,16 +36,6 @@ public class SecurityListener implements Listener {
                 return;
             }
             event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPermissionCheck(PermissionCheckEvent event) {
-        CommandSender commandSender = event.getSender();
-        if (commandSender instanceof ProxiedPlayer proxiedPlayer) {
-            if (!bridgedPlayerManager.isAuthorized(proxiedPlayer.getUniqueId())) {
-                event.setHasPermission(false);
-            }
         }
     }
 
@@ -142,6 +130,9 @@ public class SecurityListener implements Listener {
             return true;
         }
         if (command.startsWith("/register ")) {
+            return true;
+        }
+        if (command.startsWith("/menu")) {
             return true;
         }
         return command.startsWith("/bauth-antibotclick-");

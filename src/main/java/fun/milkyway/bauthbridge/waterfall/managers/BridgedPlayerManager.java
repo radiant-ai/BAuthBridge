@@ -2,7 +2,6 @@ package fun.milkyway.bauthbridge.waterfall.managers;
 
 import fun.milkyway.bauthbridge.common.pojo.PersistenceOptions;
 import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
-import net.md_5.bungee.api.config.ServerInfo;
 
 import java.util.Map;
 import java.util.UUID;
@@ -18,11 +17,13 @@ public class BridgedPlayerManager {
         authorizedPlayers = new ConcurrentHashMap<>();
     }
     public BridgedPlayer authorizePlayer(UUID uuid) {
+        plugin.getLogger().info("Authorizing player "+uuid);
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
         authorizedPlayers.put(uuid, new BridgedPlayer(uuid, true, bridgedPlayer != null ? bridgedPlayer.getPreviousServer() : null));
         return authorizedPlayers.get(uuid);
     }
     public BridgedPlayer unauthorizePlayer(UUID uuid) {
+        plugin.getLogger().info("Unauthorizing player "+uuid);
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
         if (bridgedPlayer != null) {
             authorizedPlayers.put(uuid, new BridgedPlayer(uuid, false, bridgedPlayer.getPreviousServer()));
@@ -41,10 +42,17 @@ public class BridgedPlayerManager {
     }
     public BridgedPlayer setPreviousServer(UUID uuid, String previousServer) {
         BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
-        if (bridgedPlayer != null && bridgedPlayer.isAuthorized()) {
-            authorizedPlayers.put(uuid, new BridgedPlayer(uuid, true, previousServer));
+        if (bridgedPlayer != null) {
+            authorizedPlayers.put(uuid, new BridgedPlayer(uuid, bridgedPlayer.isAuthorized, previousServer));
         }
         return authorizedPlayers.get(uuid);
+    }
+    public String getPreviousServer(UUID uuid) {
+        BridgedPlayer bridgedPlayer = authorizedPlayers.get(uuid);
+        if (bridgedPlayer != null) {
+            return authorizedPlayers.get(uuid).getPreviousServer();
+        }
+        return null;
     }
     public boolean saveAll(String fileName) {
         PersistenceManager.Persistance persistance = persistenceManager.getPersistence(fileName);
@@ -86,20 +94,16 @@ public class BridgedPlayerManager {
             this.previousServer = previousServer;
         }
 
-        public UUID getUuid() {
+        private UUID getUuid() {
             return uuid;
         }
 
-        public boolean isAuthorized() {
+        private boolean isAuthorized() {
             return isAuthorized;
         }
 
-        public String getPreviousServer() {
+        private String getPreviousServer() {
             return previousServer;
-        }
-
-        public ServerInfo getPreviousServerInfo() {
-            return previousServer != null ? plugin.getProxy().getServerInfo(previousServer) : null;
         }
     }
 }

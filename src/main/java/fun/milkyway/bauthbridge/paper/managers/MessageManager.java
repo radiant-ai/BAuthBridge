@@ -34,6 +34,7 @@ public class MessageManager {
         out.writeShort(msgbytes.toByteArray().length);
         out.write(msgbytes.toByteArray());
 
+        plugin.getLogger().info("Sending message "+message.asString()+"...");
         plugin.getServer().getScheduler().runTaskLaterAsynchronously(
                 plugin,
                 () -> plugin.getServer().sendPluginMessage(plugin, "BungeeCord", out.toByteArray()),
