@@ -2,6 +2,7 @@ package fun.milkyway.bauthbridge.waterfall.listeners;
 
 import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -66,7 +67,7 @@ public class SecurityListener implements Listener {
         if (event.getTarget().getName().equals(authServerName)) {
             if (isAuthorized && plugin.getConfiguration().getBoolean("disallow_connect_to_auth", true)) {
                 event.setCancelled(true);
-                proxiedPlayer.sendMessage((UUID) null, TextComponent
+                proxiedPlayer.sendMessage(ChatMessageType.CHAT, TextComponent
                         .fromLegacyText(plugin.getConfiguration().getString("auth_server_disallowed_message", "")));
             }
             else {
@@ -103,7 +104,7 @@ public class SecurityListener implements Listener {
                 ArrayList<BaseComponent> newComponents = new ArrayList<>();
                 newComponents.addAll(Arrays.stream(TextComponent.fromLegacyText(plugin.getConfiguration().getString("kick_reason", ""))).toList());
                 newComponents.addAll(Arrays.stream(components).toList());
-                proxiedPlayer.sendMessage((UUID) null, newComponents.toArray(components));
+                proxiedPlayer.sendMessage(ChatMessageType.CHAT, newComponents.toArray(components));
                 event.setCancelled(true);
             }
         }

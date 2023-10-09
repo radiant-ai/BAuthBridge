@@ -8,6 +8,7 @@ import fun.milkyway.bauthbridge.common.utils.Utils;
 import fun.milkyway.bauthbridge.waterfall.BAuthBridgeWaterfall;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ServerConnectRequest;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -178,13 +179,13 @@ public class AuthorizationListener implements Listener {
                             retryMap.get(proxiedPlayer.getUniqueId()) >= configuration.getInt("retry_to_prev_count", 5)) {
                         plugin.getLogger().info("Attempted to connect player "+proxiedPlayer.getName()+" to fallback server");
                         connectionResult = connectToServer(fallbackServer, proxiedPlayer);
-                        proxiedPlayer.sendMessage(TextComponent.fromLegacyText(
+                        proxiedPlayer.sendMessage(ChatMessageType.CHAT, TextComponent.fromLegacyText(
                                 configuration.getString("wait_for_connection_fallback", "")));
                     }
                     else  {
                         plugin.getLogger().info("Attempted to connect player "+proxiedPlayer.getName()+" to previous server");
                         connectionResult = connectToServer(previousServer, proxiedPlayer);
-                        proxiedPlayer.sendMessage(TextComponent.fromLegacyText(
+                        proxiedPlayer.sendMessage(ChatMessageType.CHAT, TextComponent.fromLegacyText(
                                 configuration.getString("wait_for_connection_previous", "")));
                     }
 
@@ -194,11 +195,11 @@ public class AuthorizationListener implements Listener {
                             return;
                         }
                         if (result.getName().equals(fallbackServer.getName())) {
-                            proxiedPlayer.sendMessage(TextComponent.fromLegacyText(
+                            proxiedPlayer.sendMessage(ChatMessageType.CHAT, TextComponent.fromLegacyText(
                                     configuration.getString("server_connect_fallback", "")));
                         }
                         else {
-                            proxiedPlayer.sendMessage(TextComponent.fromLegacyText(
+                            proxiedPlayer.sendMessage(ChatMessageType.CHAT, TextComponent.fromLegacyText(
                                     configuration.getString("server_connect_previous", "")+ChatColor.GRAY + result.getName()));
                         }
                         retryMap.put(proxiedPlayer.getUniqueId(), 0);

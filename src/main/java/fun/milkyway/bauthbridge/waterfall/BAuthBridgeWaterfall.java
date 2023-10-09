@@ -2,6 +2,8 @@ package fun.milkyway.bauthbridge.waterfall;
 
 import fun.milkyway.bauthbridge.common.pojo.PersistenceOptions;
 import fun.milkyway.bauthbridge.common.utils.Utils;
+import fun.milkyway.bauthbridge.waterfall.commands.LobbyCommand;
+import fun.milkyway.bauthbridge.waterfall.commands.ResetServerCommand;
 import fun.milkyway.bauthbridge.waterfall.listeners.AuthorizationListener;
 import fun.milkyway.bauthbridge.waterfall.listeners.SecurityListener;
 import fun.milkyway.bauthbridge.waterfall.managers.BridgedPlayerManager;
@@ -14,11 +16,13 @@ import net.md_5.bungee.config.YamlConfiguration;
 import java.io.*;
 
 public class BAuthBridgeWaterfall extends Plugin {
+    private static BAuthBridgeWaterfall plugin;
     private BridgedPlayerManager bridgedPlayerManager;
     private Configuration configuration;
     @Override
     public void onEnable()
     {
+        plugin = this;
         if (setupConfig()) {
             getLogger().info(ChatColor.DARK_GREEN+"Loaded config successfully!");
 
@@ -42,6 +46,10 @@ public class BAuthBridgeWaterfall extends Plugin {
             getLogger().info(ChatColor.DARK_GREEN+"Initialized player manager!");
 
             setupListeners();
+
+            getProxy().getPluginManager().registerCommand(this, new LobbyCommand("hub", getProxy().getServerInfo(fallbackServerName)));
+            getProxy().getPluginManager().registerCommand(this, new LobbyCommand("lobby", getProxy().getServerInfo(fallbackServerName)));
+            getProxy().getPluginManager().registerCommand(this, new ResetServerCommand("resetserver", getProxy().getServerInfo(fallbackServerName)));
         }
         else {
             getLogger().info(ChatColor.DARK_RED+"Failed to load config!");
@@ -111,5 +119,13 @@ public class BAuthBridgeWaterfall extends Plugin {
         getLogger().info(ChatColor.DARK_GREEN+"Registered authorization listener!");
         getProxy().getPluginManager().registerListener(this, new SecurityListener(this, bridgedPlayerManager));
         getLogger().info(ChatColor.DARK_GREEN+"Registered security listener!");
+    }
+
+    public static BAuthBridgeWaterfall getInstance() {
+        return plugin;
+    }
+
+    public BridgedPlayerManager getBridgedPlayerManager() {
+        return bridgedPlayerManager;
     }
 }

@@ -27,7 +27,7 @@ public class AuthorizationListener implements Listener {
     public void onPlayerLogin(AuthPlayerSessionSavedEvent event) {
         Player player = event.getPlayer();
         Message message = new AuthorizationMessage(player.getUniqueId(), AuthorizationMessage.Action.LOGIN);
-        messageManager.sendMessage(message, 2);
+        messageManager.sendMessage(message, 20);
     }
 
     @EventHandler(ignoreCancelled = true)
